@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anisearch</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #0F1117;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        /* Title and Subtitle */
+        .header {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #3B82F6;
+            margin: 0;
+            animation: fadeIn 1s ease-in-out;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .title:hover {
+            color: #2563EB;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #94A3B8;
+            margin-top: 10px;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        .subtitle a {
+            color: #94A3B8;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .subtitle a:hover {
+            color: #3B82F6;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            color: #94A3B8;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #263043;
+            color: #3B82F6;
+        }
+
+        /* Search Bar */
+        .search-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        input {
+            padding: 12px;
+            width: 50%;
+            max-width: 400px;
+            border: 2px solid #263043;
+            border-radius: 25px;
+            background-color: #1A1D25;
+            color: #ffffff;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #3B82F6;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            background-color: #3B82F6;
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2563EB;
+        }
+
+        /* Anime List */
+        .anime-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            justify-content: center; /* Center the layout */
+        }
+
+        .anime-card {
+            background: #1A1D25;
+            border: 1px solid #263043;
+            border-radius: 15px;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 250px;
+            /* Fixed width for each card */
+            margin: 0;
+            /* Ensure no margin is applied */
+        }
+
+        .anime-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .anime-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .anime-card-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            padding: 15px;
+        }
+
+        .anime-card h3 {
+            font-size: 1.2rem;
+            color: #3B82F6;
+            margin-bottom: 10px;
+        }
+
+        .anime-card p {
+            font-size: 0.9rem;
+            color: #94A3B8;
+            flex-grow: 1;
+        }
+
+        .anime-card .score {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: auto;
+            font-size: 0.9rem;
+            color: #3B82F6;
+        }
+
+        .anime-card .score svg {
+            width: 16px;
+            height: 16px;
+            fill: #3B82F6;
+        }
+
+        .like-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3B82F6;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: background-color 0.3s ease;
+        }
+
+        .like-btn.liked {
+            background: #3B82F6;
+        }
+
+        .like-btn.liked::before {
+            content: '♥';
+            color: white;
+        }
+
+        .like-btn::before {
+            content: '♡';
+            color: white;
+        }
+
+        /* Genre Selection */
+        .genre-select {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+
+        .genre-btn {
+            background-color: #1A1D25;
+            color: #94A3B8;
+            border: 1px solid #263043;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .genre-btn:hover,
+        .genre-btn.active {
+            background-color: #3B82F6;
+            color: white;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            .genre-btn {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1 class="title" onclick="window.location.reload()">Anisearch</h1>
+        <p class="subtitle">Made by <a href="https://www.linkedin.com/in/yaroslav-levtsun-b26ab9219/" target="_blank">
+                Yaro </a> with 🍜</p>
+    </div>
+
+    <div class="nav">
+        <a href="#" class="nav-link active" onclick="showGenres()">Search by Genre</a>
+        <a href="#" class="nav-link" onclick="showLiked()">Liked Anime</a>
+        <a href="#" class="nav-link" onclick="showSearch()">Manual Search</a>
+    </div>
+
+    <div id="genresSection">
+        <div class="genre-select" id="genreButtons"></div>
+        <div class="anime-list" id="genreAnimeList"></div>
+    </div>
+
+    <div id="likedSection" style="display: none;">
+        <div class="anime-list" id="likedAnimeList"></div>
+    </div>
+
+    <div id="searchSection" style="display: none;">
+        <div class="search-container">
+            <input type="text" id="searchBox" placeholder="Search anime...">
+            <button onclick="searchAnime()">Search</button>
+        </div>
+        <div class="anime-list" id="animeList"></div>
+    </div>
+
+    <script>
+        // Genres List
+        const GENRES = [
+            'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy',
+            'Horror', 'Mystery', 'Psychological', 'Romance', 'Sci-Fi',
+            'Slice of Life', 'Sports', 'Supernatural', 'Mecha',
+            'Isekai', 'Harem', 'Magical Girl', 'Historical',
+            'Post-Apocalyptic', 'Thriller'
+        ];
+
+        // Genre ID mapping (based on Jikan API)
+        const GENRE_IDS = {
+            'Action': 1, 'Adventure': 2, 'Comedy': 4, 'Drama': 8,
+            'Fantasy': 10, 'Horror': 14, 'Mystery': 7,
+            'Psychological': 24, 'Romance': 22, 'Sci-Fi': 24,
+            'Slice of Life': 36, 'Sports': 30, 'Supernatural': 37,
+            'Mecha': 18, 'Isekai': 81, 'Harem': 35,
+            'Magical Girl': 40, 'Historical': 13,
+            'Post-Apocalyptic': 48, 'Thriller': 41
+        };
+
+        // Initialize genre buttons
+        function initGenreButtons() {
+            const genreButtons = document.getElementById('genreButtons');
+            genreButtons.innerHTML = '';
+
+            GENRES.forEach(genre => {
+                const btn = document.createElement('button');
+                btn.textContent = genre;
+                btn.classList.add('genre-btn');
+                btn.onclick = () => loadGenreAnime(genre);
+                genreButtons.appendChild(btn);
+            });
+        }
+
+        // Load top anime for a specific genre
+        async function loadGenreAnime(genre) {
+            const genreId = GENRE_IDS[genre];
+            const genreAnimeList = document.getElementById('genreAnimeList');
+            genreAnimeList.innerHTML = '<p style="text-align:center; color:#94A3B8;">Loading...</p>';
+
+            try {
+                const response = await fetch(`https://api.jikan.moe/v4/anime?genres=${genreId}&order_by=score&sort=desc&limit=12`);
+                const data = await response.json();
+
+                genreAnimeList.innerHTML = '';
+                data.data.forEach(anime => {
+                    const animeCard = createAnimeCard(anime);
+                    genreAnimeList.appendChild(animeCard);
+                });
+            } catch (error) {
+                genreAnimeList.innerHTML = `<p style="text-align:center; color:#94A3B8;">Error loading anime: ${error.message}</p>`;
+            }
+        }
+
+        // Show genre section
+        function showGenres() {
+            document.getElementById('searchSection').style.display = 'none';
+            document.getElementById('likedSection').style.display = 'none';
+            document.getElementById('genresSection').style.display = 'block';
+
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector('.nav-link[onclick="showGenres()"]').classList.add('active');
+
+            // Initialize genre buttons if not already done
+            if (!document.getElementById('genreButtons').children.length) {
+                initGenreButtons();
+            }
+        }
+
+        // Show search section
+        function showSearch() {
+            document.getElementById('searchSection').style.display = 'block';
+            document.getElementById('likedSection').style.display = 'none';
+            document.getElementById('genresSection').style.display = 'none';
+
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector('.nav-link[onclick="showSearch()"]').classList.add('active');
+        }
+
+        // Show liked anime section
+        function showLiked() {
+            document.getElementById('searchSection').style.display = 'none';
+            document.getElementById('likedSection').style.display = 'block';
+            document.getElementById('genresSection').style.display = 'none';
+
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector('.nav-link[onclick="showLiked()"]').classList.add('active');
+
+            // Load liked anime
+            loadLikedAnime();
+        }
+
+        // Load liked anime from localStorage
+        function loadLikedAnime() {
+            const likedAnimeList = document.getElementById('likedAnimeList');
+            const likedAnime = getLikedAnime();
+
+            likedAnimeList.innerHTML = '';
+            likedAnime.forEach(anime => {
+                const animeCard = createAnimeCard(anime, true);
+                likedAnimeList.appendChild(animeCard);
+            });
+        }
+
+        // Get liked anime from localStorage
+        function getLikedAnime() {
+            const likedAnime = localStorage.getItem('likedAnime');
+            return likedAnime ? JSON.parse(likedAnime) : [];
+        }
+
+        // Save liked anime to localStorage
+        function saveLikedAnime(animeList) {
+            localStorage.setItem('likedAnime', JSON.stringify(animeList));
+        }
+
+        // Toggle like status of an anime
+        function toggleLike(anime) {
+            const likedAnime = getLikedAnime();
+            const index = likedAnime.findIndex(a => a.mal_id === anime.mal_id);
+
+            if (index === -1) {
+                likedAnime.push(anime); // Add to liked list
+            } else {
+                likedAnime.splice(index, 1); // Remove from liked list
+            }
+
+            saveLikedAnime(likedAnime);
+            loadLikedAnime(); // Refresh liked anime section
+
+            // Toggle the liked class on the button
+            const likeButton = document.querySelector(`.like-btn[data-id='${anime.mal_id}']`);
+            if (likeButton) {
+                likeButton.classList.toggle('liked');
+            }
+        }
+
+        // Create anime card
+        function createAnimeCard(anime, isLikedSection = false) {
+            const animeCard = document.createElement('div');
+            animeCard.classList.add('anime-card');
+
+            const likedAnime = getLikedAnime();
+            const isLiked = likedAnime.some(a => a.mal_id === anime.mal_id);
+
+            animeCard.innerHTML = `
+        <button class="like-btn ${isLiked ? 'liked' : ''}" data-id="${anime.mal_id}" onclick="toggleLike(${JSON.stringify(anime).replace(/"/g, '&quot;')})">
+        </button>
+        <img src="${anime.images.jpg.image_url}" alt="${anime.title}">
+        <div class="anime-card-content">
+            <h3>${anime.title}</h3>
+            <p>${anime.synopsis ? anime.synopsis.substring(0, 100) + '...' : 'No synopsis available'}</p>
+            <div class="score">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>${anime.score || 'N/A'}</span>
+            </div>
+        </div>
+    `;
+
+            animeCard.onclick = (e) => {
+                // Prevent opening link if like button is clicked
+                if (e.target.classList.contains('like-btn')) return;
+                window.open(anime.url, '_blank');
+            };
+
+            return animeCard;
+        }
+
+        // Search anime
+        async function searchAnime() {
+            const query = document.getElementById('searchBox').value;
+            if (!query) return;
+
+            const animeList = document.getElementById('animeList');
+            animeList.innerHTML = '<p style="text-align:center; color:#94A3B8;">Loading...</p>';
+
+            try {
+                const response = await fetch(`https://api.jikan.moe/v4/anime?q=${query}&limit=10`);
+                const data = await response.json();
+
+                animeList.innerHTML = '';
+                data.data.forEach(anime => {
+                    const animeCard = createAnimeCard(anime);
+                    animeList.appendChild(animeCard);
+                });
+            } catch (error) {
+                animeList.innerHTML = `<p style="text-align:center; color:#94A3B8;">Error loading anime: ${error.message}</p>`;
+            }
+        }
+
+        // Initialize genres section on page load
+        showGenres();
+
+        
+    </script>
+</body>
+
+</html>
