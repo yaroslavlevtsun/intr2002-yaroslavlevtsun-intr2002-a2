@@ -137,7 +137,8 @@
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
-            justify-content: center; /* Center the layout */
+            justify-content: center;
+            /* Center the layout */
         }
 
         .anime-card {
@@ -313,6 +314,7 @@
     <script>
         // Genres List
         const GENRES = [
+            'All Category', // Add "All Category" as the first genre
             'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy',
             'Horror', 'Mystery', 'Psychological', 'Romance', 'Sci-Fi',
             'Slice of Life', 'Sports', 'Supernatural', 'Mecha',
@@ -322,6 +324,7 @@
 
         // Genre ID mapping (based on Jikan API)
         const GENRE_IDS = {
+            'All Category': null, // No genre ID for "All Category"
             'Action': 1, 'Adventure': 2, 'Comedy': 4, 'Drama': 8,
             'Fantasy': 10, 'Horror': 14, 'Mystery': 7,
             'Psychological': 24, 'Romance': 22, 'Sci-Fi': 24,
@@ -330,6 +333,12 @@
             'Magical Girl': 40, 'Historical': 13,
             'Post-Apocalyptic': 48, 'Thriller': 41
         };
+
+        // Global variables for pagination
+        let currentPage = 1;
+        let isLoading = false;
+        let currentGenre = null;
+        let currentSearchQuery = null;
 
         // Initialize genre buttons
         function initGenreButtons() {
@@ -340,29 +349,104 @@
                 const btn = document.createElement('button');
                 btn.textContent = genre;
                 btn.classList.add('genre-btn');
-                btn.onclick = () => loadGenreAnime(genre);
+                btn.onclick = () => {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.genre-btn').forEach(button => {
+                        button.classList.remove('active');
+                    });
+                    // Add active class to the clicked button
+                    btn.classList.add('active');
+                    loadGenreAnime(genre);
+                };
                 genreButtons.appendChild(btn);
             });
+
+            // Set "All Category" as the default active genre
+            document.querySelector('.genre-btn').classList.add('active');
         }
 
-        // Load top anime for a specific genre
-        async function loadGenreAnime(genre) {
-            const genreId = GENRE_IDS[genre];
-            const genreAnimeList = document.getElementById('genreAnimeList');
-            genreAnimeList.innerHTML = '<p style="text-align:center; color:#94A3B8;">Loading...</p>';
+        // Load top anime with infinite scroll
+        async function loadAnimes(type = 'genre', param = null) {
+            // Prevent multiple simultaneous loads
+            if (isLoading) return;
+
+            isLoading = true;
+            let animeList, apiUrl;
+
+            // Determine which list to update based on current view
+            if (type === 'genre') {
+                animeList = document.getElementById('genreAnimeList');
+                const genreId = GENRE_IDS[param];
+                if (param === 'All Category') {
+                    // Fetch top anime overall (no genre filter)
+                    apiUrl = `https://api.jikan.moe/v4/top/anime?page=${currentPage}&limit=12`;
+                } else {
+                    // Fetch anime by genre
+                    apiUrl = `https://api.jikan.moe/v4/anime?genres=${genreId}&order_by=score&sort=desc&page=${currentPage}&limit=12`;
+                }
+                currentGenre = param;
+                currentSearchQuery = null;
+            } else if (type === 'search') {
+                animeList = document.getElementById('animeList');
+                apiUrl = `https://api.jikan.moe/v4/anime?q=${param}&order_by=score&sort=desc&page=${currentPage}&limit=12`;
+                currentSearchQuery = param;
+                currentGenre = null;
+            }
+
+            // Show loading indicator
+            if (currentPage === 1) {
+                animeList.innerHTML = '<p style="text-align:center; color:#94A3B8;">Loading...</p>';
+            } else {
+                // Append loading indicator at the bottom for subsequent pages
+                const loadingIndicator = document.createElement('p');
+                loadingIndicator.style.textAlign = 'center';
+                loadingIndicator.style.color = '#94A3B8';
+                loadingIndicator.textContent = 'Loading more...';
+                loadingIndicator.id = 'loading-indicator';
+                animeList.appendChild(loadingIndicator);
+            }
 
             try {
-                const response = await fetch(`https://api.jikan.moe/v4/anime?genres=${genreId}&order_by=score&sort=desc&limit=12`);
+                const response = await fetch(apiUrl);
                 const data = await response.json();
 
-                genreAnimeList.innerHTML = '';
+                // Remove loading indicator
+                const existingLoadingIndicator = document.getElementById('loading-indicator');
+                if (existingLoadingIndicator) {
+                    existingLoadingIndicator.remove();
+                }
+
+                // Clear list on first page
+                if (currentPage === 1) {
+                    animeList.innerHTML = '';
+                }
+
+                // Add new anime cards
                 data.data.forEach(anime => {
                     const animeCard = createAnimeCard(anime);
-                    genreAnimeList.appendChild(animeCard);
+                    animeList.appendChild(animeCard);
                 });
+
+                // Increment page for next load
+                currentPage++;
+
+                // Check if there are more pages
+                isLoading = false;
             } catch (error) {
-                genreAnimeList.innerHTML = `<p style="text-align:center; color:#94A3B8;">Error loading anime: ${error.message}</p>`;
+                console.error('Error loading anime:', error);
+                const existingLoadingIndicator = document.getElementById('loading-indicator');
+                if (existingLoadingIndicator) {
+                    existingLoadingIndicator.textContent = 'Error loading anime';
+                }
+                isLoading = false;
             }
+        }
+
+        // Load genre anime
+        function loadGenreAnime(genre) {
+            // Reset pagination
+            currentPage = 1;
+            loadAnimes('genre', genre);
         }
 
         // Show genre section
@@ -381,6 +465,10 @@
             if (!document.getElementById('genreButtons').children.length) {
                 initGenreButtons();
             }
+
+            // Reset and load initial genre (All Category)
+            currentPage = 1;
+            loadAnimes('genre', 'All Category');
         }
 
         // Show search section
@@ -435,27 +523,6 @@
             localStorage.setItem('likedAnime', JSON.stringify(animeList));
         }
 
-        // Toggle like status of an anime
-        function toggleLike(anime) {
-            const likedAnime = getLikedAnime();
-            const index = likedAnime.findIndex(a => a.mal_id === anime.mal_id);
-
-            if (index === -1) {
-                likedAnime.push(anime); // Add to liked list
-            } else {
-                likedAnime.splice(index, 1); // Remove from liked list
-            }
-
-            saveLikedAnime(likedAnime);
-            loadLikedAnime(); // Refresh liked anime section
-
-            // Toggle the liked class on the button
-            const likeButton = document.querySelector(`.like-btn[data-id='${anime.mal_id}']`);
-            if (likeButton) {
-                likeButton.classList.toggle('liked');
-            }
-        }
-
         // Create anime card
         function createAnimeCard(anime, isLikedSection = false) {
             const animeCard = document.createElement('div');
@@ -487,32 +554,63 @@
             return animeCard;
         }
 
+        // Toggle like status of an anime
+        function toggleLike(anime) {
+            const likedAnime = getLikedAnime();
+            const index = likedAnime.findIndex(a => a.mal_id === anime.mal_id);
+
+            if (index === -1) {
+                likedAnime.push(anime); // Add to liked list
+            } else {
+                likedAnime.splice(index, 1); // Remove from liked list
+            }
+
+            saveLikedAnime(likedAnime);
+
+            // Update all like buttons for this anime across different sections
+            document.querySelectorAll(`.like-btn[data-id='${anime.mal_id}']`).forEach(likeButton => {
+                likeButton.classList.toggle('liked');
+            });
+
+            // Refresh liked anime section if it's currently visible
+            if (document.getElementById('likedSection').style.display !== 'none') {
+                loadLikedAnime();
+            }
+        }
+
         // Search anime
         async function searchAnime() {
             const query = document.getElementById('searchBox').value;
             if (!query) return;
 
-            const animeList = document.getElementById('animeList');
-            animeList.innerHTML = '<p style="text-align:center; color:#94A3B8;">Loading...</p>';
-
-            try {
-                const response = await fetch(`https://api.jikan.moe/v4/anime?q=${query}&limit=10`);
-                const data = await response.json();
-
-                animeList.innerHTML = '';
-                data.data.forEach(anime => {
-                    const animeCard = createAnimeCard(anime);
-                    animeList.appendChild(animeCard);
-                });
-            } catch (error) {
-                animeList.innerHTML = `<p style="text-align:center; color:#94A3B8;">Error loading anime: ${error.message}</p>`;
-            }
+            // Reset pagination
+            currentPage = 1;
+            loadAnimes('search', query);
         }
 
-        // Initialize genres section on page load
-        showGenres();
+        // Setup infinite scroll
+        function setupInfiniteScroll() {
+            window.addEventListener('scroll', () => {
+                // Check if user is near the bottom of the page
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+                    // Reload based on current view
+                    if (currentGenre) {
+                        loadAnimes('genre', currentGenre);
+                    } else if (currentSearchQuery) {
+                        loadAnimes('search', currentSearchQuery);
+                    }
+                }
+            });
+        }
 
-        
+        // Initialize page
+        function initializePage() {
+            setupInfiniteScroll();
+            showGenres();
+        }
+
+        // Run initialization
+        initializePage();
     </script>
 </body>
 
